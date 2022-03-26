@@ -21,11 +21,18 @@ typedef struct _Token {
     char *str;
 } Token;
 
-TokenPtr token;
+TokenPtr token; // current token
+char *user_input; // source code
 
-void error(char *fmt, ...) {
+void error_at(char *loc, char *fmt, ...) {
     va_list ap;
     va_start(ap, fmt);
+
+    int pos = loc - user_input;
+
+    fprintf(stderr, "%s\n", user_input);
+    fprintf(stderr, "%*s", pos, " ");
+    fprintf(stderr, "^ ");
     vfprintf(stderr, fmt, ap);
     fprintf(stderr, "\n");
     exit(1);
@@ -41,13 +48,13 @@ bool consume(char op) {
 
 void expect(char op) {
     if(token->kind != TK_RESERVED || token->str[0] != op) 
-        error("'%c' is not '%c'", token->str[0], op);
+        error_at(token->str, "'%c' is not '%c'", token->str[0], op);
     token = token->next;
 }
 
 int expect_number() {
     if(token->kind != TK_NUM)
-        error("'%c' is not a number", token->kind);
+        error_at(token->str, "'%c' is not a number", token->kind);
     
     int val = token->val;
     token = token->next;
@@ -86,7 +93,7 @@ Token *tokenize(char *p) {
             continue;
         }
         else {
-            error("failed to tokenize.");
+            error_at(cur->str, "failed to tokenize.");
         }
     }
 
