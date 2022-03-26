@@ -6,6 +6,119 @@
 #include<stdbool.h>
 #include<string.h>
 
+// node of abstract syntax tree
+typedef enum {
+    ND_ADD, 
+    ND_SUB,
+    ND_MUL,
+    ND_DIV,
+    ND_NUM,
+} NodeKind;
+
+// node
+typedef struct _Node *NodePtr;
+typedef struct _Node {
+    NodeKind kind;
+    NodePtr lhs;
+    NodePtr rhs;
+    int val; // use if ND_NUM
+} Node;
+
+
+NodePtr expr();
+NodePtr mul();
+NodePtr primary();
+bool consume(char);
+void expect(char);
+int expect_number();
+
+// node generator methods
+NodePtr new_node(NodeKind kind, NodePtr lhs, NodePtr rhs) {
+    NodePtr node = calloc(1, sizeof(Node));
+    node->kind = kind;
+    node->lhs = lhs;
+    node->rhs = rhs;
+    return node;
+}
+NodePtr new_node_num(int val) {
+    NodePtr node = calloc(1, sizeof(Node));
+    node->kind = ND_NUM;
+    node->val = val;
+    return node;
+}
+
+// methods by production-rule
+// expr = mul ("+" mul | "-" mul)*
+NodePtr expr() {
+    NodePtr node = mul();
+    for (;;) {
+        if(consume('+'))
+            node = new_node(ND_ADD, node, mul());
+        else if(consume('-'))
+            node = new_node(ND_SUB, node, mul());
+        else
+            return node;
+    }
+}
+// mul = primary ("*" primary | "/" primary)*
+NodePtr mul() {
+    NodePtr node = primary();
+    for (;;) {
+        if(consume('*'))
+            node = new_node(ND_MUL, node, primary());
+        else if(consume('/'))
+            node = new_node(ND_DIV, node, primary());
+        else
+            return node;
+    }
+}
+// primary = "(" expr ")" | num
+NodePtr primary() {
+    if(consume('(')) {
+        NodePtr node = expr();
+        expect(')');
+        return node;
+    }
+
+    return new_node_num(expect_number());
+}
+
+// generate code
+void gen(NodePtr node) {
+    if(node->kind == ND_NUM) {
+        printf("  push %d\n", node->val);
+        return;
+    }
+
+    gen(node->lhs);
+    gen(node->rhs);
+
+    printf("  pop rdi\n");
+    printf("  pop rax\n");
+
+    switch(node->kind) {
+        case ND_ADD:
+            printf("  add rax, rdi\n");
+            break;
+        case ND_SUB:
+            printf("  sub rax, rdi\n");
+            break;
+        case ND_MUL:
+            printf("  imul rax, rdi\n");
+            break;
+        case ND_DIV:
+            printf("  cqo\n"); // convert quad word to octo word
+            printf("  idiv rdi\n"); // rdx&rax / rdi = quotient:rax remainder:rdx
+            break;
+        default:
+            break;
+    }
+
+    printf("  push rax\n");
+}
+
+
+// token
 typedef enum {
     TK_RESERVED,
     TK_NUM,
@@ -79,14 +192,17 @@ Token *tokenize(char *p) {
     Token *cur = &head;
 
     while(*p) {
+        // blank
         if(isspace(*p)) {
             ++p;
             continue;
         }
-        else if(*p == '+' || *p == '-') {
+        // Punctuator
+        else if(strchr("+-*/()", *p)) {
             cur = new_token(TK_RESERVED, cur, p++);
             continue;
         }
+        // Number
         else if(isdigit(*p)) {
             cur = new_token(TK_NUM, cur, p);
             cur->val = strtol(p, &p, 10);
@@ -107,13 +223,18 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    token = tokenize(argv[1]);
+    user_input = argv[1];
+    token = tokenize(user_input);
+    NodePtr node = expr();
 
     printf(".intel_syntax noprefix\n");
     printf(".global main\n");
     printf("main:\n");
-    printf("  mov rax, %d\n", expect_number());
 
+    // abstract syntax tree to assembly
+    gen(node);
+    /*
+    printf("  mov rax, %d\n", expect_number());
     while(!at_eof()) {
         if(consume('+')) {
             printf("  add rax, %d\n", expect_number());
@@ -123,7 +244,9 @@ int main(int argc, char **argv)
         expect('-');
         printf("  sub rax, %d\n", expect_number());
     }
+    */
 
+    printf("  pop rax\n");
     printf("  ret\n");
     return 0;
 }
