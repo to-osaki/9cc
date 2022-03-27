@@ -8,24 +8,28 @@
 
 // node of abstract syntax tree
 typedef enum {
+    // operators
     ND_ADD, 
     ND_SUB,
     ND_MUL,
     ND_DIV,
+    // number literal
     ND_NUM,
-
+    // = 
     ND_ASSIGN,
+    // varialbe
     ND_LOCALVAR,
-
+    // comparison operators
     ND_EQ,
     ND_NEQ,
     ND_LOWER,
     ND_LEQ,
-
-    ND_RETURN,
-
-    ND_LABEL,
-    ND_GOTO,
+    // reserved word
+    ND_RETURN, // return statement
+    ND_IF, // if statement
+    // goto label
+    ND_LABEL, // define label
+    ND_GOTO, // goto statement
 } NodeKind;
 
 // node
@@ -59,6 +63,7 @@ typedef struct _Label {
 typedef enum {
     TK_RESERVED,
     TK_RETURN, // reserved word : return
+    TK_IF, // reserved word : if
     TK_GOTO, // reserved word : goto
     TK_DEFINED_LABEL, // label:
 

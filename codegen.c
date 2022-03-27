@@ -3,6 +3,7 @@
 Node *g_code[100];
 LVar *g_locals = NULL; // local vars
 Label *g_labels[100]; // goto labels;
+int g_if_index = 0;
 
 LVar *find_lvar(Token *t) {
     for(LVar *var = g_locals; var != NULL; var = var->next) {
@@ -57,10 +58,10 @@ void program() {
     }
     g_code[i] = NULL;
 }
-// statement = (label ":" | "goto" ident ";" | "return" expr ";" | expr ";")
+// statement = (label ":" | "if" "(" expr ")" statement | "goto" ident ";" | "return" expr ";" | expr ";")
 NodePtr statement() {
     Node *node = NULL;
-
+    // label:
     Token *def_label = consume_kind(TK_DEFINED_LABEL);
     if(def_label != NULL) {
         node = new_leaf_node(ND_LABEL);
@@ -68,7 +69,17 @@ NodePtr statement() {
         expect(":");
         return node;
     }
-
+    // if
+    Token *token_if = consume_kind(TK_IF);
+    if(token_if != NULL) {
+        expect("(");
+        node = new_leaf_node(ND_IF);
+        node->lhs = expr();
+        expect(")");
+        node->rhs = statement();
+        return node;
+    }
+    // 
     Token *jmp_label = consume_kind(TK_GOTO);
     if(jmp_label != NULL) {
         node = new_leaf_node(ND_GOTO);
@@ -212,6 +223,15 @@ void gen_lval(NodePtr node) {
 void gen(NodePtr node) {
     // treat lvalue
     switch(node->kind) {
+        case ND_IF:
+            gen(node->lhs);
+            printf("  pop rax\n");
+            printf("  cmp rax, 0\n");
+            printf("  je .Lend%d\n", g_if_index);
+            gen(node->rhs);
+            printf(".Lend%d: nop\n", g_if_index);
+            ++g_if_index;
+            return;
         case ND_LABEL:
             printf("%s: nop\n", g_labels[node->gotoindex]->name);
             printf("  push 0\n"); // push dummy value

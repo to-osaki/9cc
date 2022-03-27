@@ -143,6 +143,12 @@ Token *tokenize() {
             p += 4;
             continue;
         }
+        // reserved word : if 
+        else if(strncmp(p, "if", 2) == 0 && isspace(p[2])) {
+            cur = new_token(TK_IF, cur, p, 2);
+            p += 2;
+            continue;
+        }
         // Identifier
         else if(is_alnum(*p)) {
             int label = label_length(p);

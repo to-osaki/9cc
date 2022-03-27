@@ -60,4 +60,8 @@ assert 1 'goto hoge; return 0; hoge: return 1;'
 assert 20 'a = 2*(3+2); goto fuga; return a; fuga: return a * 2;'
 assert 201 'b = 100; a = 101;c=1; goto hoge; return c;hoge: return a+b;'
 
+assert 1 'if (1) goto c1; return 0; c1: return 1;'
+assert 1 'value=(3+3);if (value > 5) goto c1; return 0; c1: return 1;'
+assert 1 'value=(3+3);if (value == 0) goto _then; goto _else; _then: return 0; _else: return 1;'
+
 echo OK
