@@ -14,6 +14,9 @@ typedef enum {
     ND_DIV,
     ND_NUM,
 
+    ND_ASSIGN,
+    ND_LOCALVAR,
+
     ND_EQ,
     ND_NEQ,
     ND_LOWER,
@@ -27,11 +30,13 @@ typedef struct _Node {
     NodePtr lhs;
     NodePtr rhs;
     int val; // use if ND_NUM
+    int offset; // use if ND_LOCALVAR, offset from BP
 } Node;
 
 // token kind
 typedef enum {
     TK_RESERVED,
+    TK_IDENT,
     TK_NUM,
     TK_EOF,
 } TokenKind;
@@ -46,10 +51,10 @@ typedef struct _Token {
     char *str;
 } Token;
 
-
 // forward declaration
-extern NodePtr program();
+extern void program();
 extern NodePtr statement();
+extern NodePtr assign();
 extern NodePtr expr();
 extern NodePtr equality();
 extern NodePtr relational();
@@ -58,7 +63,9 @@ extern NodePtr mul();
 extern NodePtr unary();
 extern NodePtr primary();
 
+extern void error_at(char*, char*, ...);
 extern bool consume(char*);
+extern TokenPtr consume_kind(TokenKind kind);
 extern void expect(char*);
 extern int expect_number();
 extern bool startswith(char *p, char *q);
@@ -68,4 +75,5 @@ extern void gen(NodePtr node);
 extern Token *tokenize();
 
 extern TokenPtr token; // current token
+extern Node *g_code[100];
 extern char *user_input; // source code

@@ -50,4 +50,8 @@ assert 0 '1>2;'
 assert 1 '1>=0;'
 assert 1 '1>=1;'
 assert 0 '1>=2;'
+
+assert 6 'a = 3;3+a;'
+assert 18 'a = 3;c=-16;-(a*(10+c));'
+
 echo OK

@@ -8,14 +8,24 @@ int main(int argc, char **argv)
 
     user_input = argv[1];
     token = tokenize();
-    NodePtr node = program();
+    program(); // into g_code;
 
     printf(".intel_syntax noprefix\n");
     printf(".global main\n");
     printf("main:\n");
 
+    // prologue : reserve localvar
+    printf("  push rbp\n");
+    printf("  mov rbp, rsp\n");
+    printf("  sub rsp, 208\n"); // extend stack 8 * (a to z)
+
+    for(int i = 0; g_code[i] != NULL; ++i) {
+        gen(g_code[i]);
+        printf("  pop rax\n"); // pop value of statement evaluated
+    }
+
     // abstract syntax tree to assembly
-    gen(node);
+    //gen(node);
     /*
     printf("  mov rax, %d\n", expect_number());
     while(!at_eof()) {
@@ -29,7 +39,9 @@ int main(int argc, char **argv)
     }
     */
 
-    printf("  pop rax\n");
+    // epilogue
+    printf("  mov rsp, rbp\n");
+    printf("  pop rbp\n");
     printf("  ret\n");
     return 0;
 }

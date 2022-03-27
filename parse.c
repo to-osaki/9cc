@@ -7,11 +7,12 @@ void error_at(char *loc, char *fmt, ...) {
     va_list ap;
     va_start(ap, fmt);
 
-    int pos = loc - user_input;
-
     fprintf(stderr, "%s\n", user_input);
-    fprintf(stderr, "%*s", pos, " ");
-    fprintf(stderr, "^ ");
+    if(false) {
+        int pos = loc - user_input;
+        fprintf(stderr, "%*s", pos, " ");
+        fprintf(stderr, "^ ");
+    }
     vfprintf(stderr, fmt, ap);
     fprintf(stderr, "\n");
     exit(1);
@@ -29,6 +30,19 @@ bool consume(char *op) {
     {
         token = token->next;
         return true;
+    }
+}
+
+TokenPtr consume_kind(TokenKind kind) {
+    if(token->kind != kind)
+    {
+        return NULL;
+    }
+    else
+    {
+        TokenPtr ident = token;
+        token = token->next;
+        return ident;
     }
 }
 
@@ -80,6 +94,12 @@ Token *tokenize() {
         // blank
         if(isspace(*p)) {
             ++p; // skip
+            continue;
+        }
+        // Identifier
+        else if('a' <= *p && *p <= 'z') {
+            cur = new_token(TK_IDENT, cur, p, 1);
+            ++p;
             continue;
         }
         // Punctuator

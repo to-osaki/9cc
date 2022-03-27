@@ -1,5 +1,7 @@
 #include "9cc.h"
 
+Node *g_code[100];
+
 // node generator methods
 NodePtr new_node(NodeKind kind, NodePtr lhs, NodePtr rhs) {
     NodePtr node = calloc(1, sizeof(Node));
@@ -14,26 +16,40 @@ NodePtr new_node_num(int val) {
     node->val = val;
     return node;
 }
+NodePtr new_node_localvar(int offset) {
+    NodePtr node = calloc(1, sizeof(Node));
+    node->kind = ND_LOCALVAR;
+    node->offset = offset;
+    return node;
+}
 
 // methods by production-rule
 // program = statement*
-NodePtr program() {
-    NodePtr node = statement();
-    while(!at_eof()) {
-        node = statement();
+void program() {
+    int len = sizeof(g_code) / sizeof(g_code[0]);
+    int i = 0;
+    for(; i < len - 1 && !at_eof(); ++i) {
+        g_code[i] = statement();
     }
-    return node;
+    g_code[i] = NULL;
 }
 // statement = expr ";"
-NodePtr statement(){
+NodePtr statement() {
     NodePtr node = expr();
     expect(";");
     return node;
 }
-
-// expr = mul ("+" mul | "-" mul)*
+// expr = assign
 NodePtr expr() {
-    return equality();
+    return assign();
+}
+// assign = equality ("=" assign)?
+NodePtr assign() {
+    NodePtr node = equality();
+    if(consume("=")) {
+        node = new_node(ND_ASSIGN, node, assign());
+    }
+    return node;
 }
 // equality = relational ("==" relational | "!=" relational)*
 NodePtr equality()
@@ -99,7 +115,7 @@ NodePtr unary() {
     else
         return primary();
 }
-// primary = "(" expr ")" | num
+// primary = "(" expr ")" | num | ident
 NodePtr primary() {
     if(consume("(")) {
         NodePtr node = expr();
@@ -107,14 +123,48 @@ NodePtr primary() {
         return node;
     }
 
-    return new_node_num(expect_number());
+    TokenPtr ident = consume_kind(TK_IDENT);
+    if(ident != NULL) {
+        return new_node_localvar((ident->str[0] - 'a' + 1) * 8);
+    }
+    else {
+        return new_node_num(expect_number());
+    }
+}
+
+void gen_lval(NodePtr node) {
+    if(node->kind != ND_LOCALVAR) {
+        error_at(NULL, "NodeKind [%d] is not a lvalue", node->kind);
+    }
+
+    printf("  mov rax, rbp\n"); // rax = base pointer
+    printf("  sub rax, %d\n", node->offset); // base pointer - offset => var address
+    printf("  push rax\n");
 }
 
 // generate code
 void gen(NodePtr node) {
-    if(node->kind == ND_NUM) {
-        printf("  push %d\n", node->val);
-        return;
+    // treat lvalue
+    switch(node->kind) {
+        case ND_NUM:
+            printf("  push %d\n", node->val);
+            return;
+        case ND_LOCALVAR:
+            gen_lval(node);
+            printf("  pop rax\n"); // rax is var address
+            printf("  mov rax, [rax]\n"); // store var value to rax
+            printf("  push rax\n"); // push var value
+            return;
+        case ND_ASSIGN:
+            gen_lval(node->lhs);
+            gen(node->rhs);
+            printf("  pop rdi\n"); // rdi is rvalue
+            printf("  pop rax\n"); // rax is var address
+            printf("  mov [rax], rdi\n"); // *rax = rdi
+            printf("  push rdi\n");
+            return;
+        default:
+            break;
     }
 
     gen(node->lhs);
