@@ -2,6 +2,7 @@
 
 Node *g_code[100];
 LVar *g_locals = NULL; // local vars
+Label *g_labels[100]; // goto labels;
 
 LVar *find_lvar(Token *t) {
     for(LVar *var = g_locals; var != NULL; var = var->next) {
@@ -10,6 +11,20 @@ LVar *find_lvar(Token *t) {
         }
     }
     return NULL;
+}
+
+int find_label_index(Token *token) {
+    int i = 0;
+    for(; g_labels[i] != NULL; ++i) {
+        if(strncmp(g_labels[i]->name, token->str, token->len) == 0) {
+            return i;
+        }
+    }
+    // add new label
+    g_labels[i] = calloc(1, sizeof(Label));
+    g_labels[i]->name = calloc(token->len, sizeof(char));
+    memcpy(g_labels[i]->name, token->str, token->len * sizeof(char));
+    return i;
 }
 
 // node generator methods
@@ -42,19 +57,38 @@ void program() {
     }
     g_code[i] = NULL;
 }
-// statement = "return" expr ";" | expr ";"
+// statement = (label ":" | "goto" ident ";" | "return" expr ";" | expr ";")
 NodePtr statement() {
-    if(consume_kind(TK_RETURN)) {
-        Node *node = new_leaf_node(ND_RETURN);
-        node->lhs = expr();
-        expect(";");
+    Node *node = NULL;
+
+    Token *def_label = consume_kind(TK_DEFINED_LABEL);
+    if(def_label != NULL) {
+        node = new_leaf_node(ND_LABEL);
+        node->gotoindex = find_label_index(def_label);
+        expect(":");
         return node;
+    }
+
+    Token *jmp_label = consume_kind(TK_GOTO);
+    if(jmp_label != NULL) {
+        node = new_leaf_node(ND_GOTO);
+        Token *label = consume_kind(TK_IDENT);
+        if(label == NULL) {
+            error_at(NULL, "goto does not have label name.");
+        }
+        else {
+            node->gotoindex = find_label_index(label);
+        }
+    }
+    else if(consume_kind(TK_RETURN)) {
+        node = new_leaf_node(ND_RETURN);
+        node->lhs = expr();
     }
     else {
-        NodePtr node = expr();
-        expect(";");
-        return node;
+        node = expr();
     }
+    expect(";");
+    return node;
 }
 // expr = assign
 NodePtr expr() {
@@ -178,6 +212,13 @@ void gen_lval(NodePtr node) {
 void gen(NodePtr node) {
     // treat lvalue
     switch(node->kind) {
+        case ND_LABEL:
+            printf("%s: nop\n", g_labels[node->gotoindex]->name);
+            printf("  push 0\n"); // push dummy value
+            return;
+        case ND_GOTO:
+            printf("  jmp %s\n", g_labels[node->gotoindex]->name);
+            return;
         case ND_RETURN:
             gen(node->lhs);
             printf("  pop rax\n");

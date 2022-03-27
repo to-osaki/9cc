@@ -23,6 +23,9 @@ typedef enum {
     ND_LEQ,
 
     ND_RETURN,
+
+    ND_LABEL,
+    ND_GOTO,
 } NodeKind;
 
 // node
@@ -33,6 +36,7 @@ typedef struct _Node {
     NodePtr rhs;
     int val; // use if ND_NUM
     int offset; // use if ND_LOCALVAR, offset from BP
+    int gotoindex; // use if ND_GOTO
 } Node;
 
 // local var
@@ -44,10 +48,19 @@ typedef struct _LVar {
     int offset;
 } LVar;
 
+// local var
+typedef struct _Label *LabelPtr;
+typedef struct _Label {
+    LabelPtr next;
+    char *name;
+} Label;
+
 // token kind
 typedef enum {
     TK_RESERVED,
     TK_RETURN, // reserved word : return
+    TK_GOTO, // reserved word : goto
+    TK_DEFINED_LABEL, // label:
 
     TK_IDENT,
     TK_NUM,

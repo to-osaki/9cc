@@ -81,6 +81,19 @@ int is_alnum(char c) {
          (c == '_');
 }
 
+int label_length(char *p) {
+    char *q = p;
+    while(is_alnum(*q)) {
+        ++q;
+    }
+    if(*q == ':') {
+        return q - p;
+    }
+    else {
+        return -1;
+    }
+}
+
 int ident_length(char *p) {
     char *q = p;
     while(is_alnum(*q)) {
@@ -122,12 +135,26 @@ Token *tokenize() {
         else if(strncmp(p, "return", 6) == 0 && isspace(p[6])) {
             cur = new_token(TK_RETURN, cur, p, 6);
             p += 6;
+            continue;
+        }
+        // reserved word : goto 
+        else if(strncmp(p, "goto", 4) == 0 && isspace(p[4])) {
+            cur = new_token(TK_GOTO, cur, p, 4);
+            p += 4;
+            continue;
         }
         // Identifier
         else if(is_alnum(*p)) {
-            int len = ident_length(p);
-            cur = new_token(TK_IDENT, cur, p, len);
-            p += len;
+            int label = label_length(p);
+            if(label > 0) {
+                cur = new_token(TK_DEFINED_LABEL, cur, p, label);
+                p += label;
+            }
+            else {
+                int len = ident_length(p);
+                cur = new_token(TK_IDENT, cur, p, len);
+                p += len;
+            }
             continue;
         }
         // Punctuator
@@ -141,7 +168,7 @@ Token *tokenize() {
             p += 2;
             continue;
         }
-        else if(strchr("+-*/()<>=;", *p)) {
+        else if(strchr("+-*/()<>=;:", *p)) {
             cur = new_token(TK_RESERVED, cur, p++, 1);
             continue;
         }

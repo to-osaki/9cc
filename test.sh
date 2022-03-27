@@ -56,4 +56,8 @@ assert 18 'x = 3;va=-16;return -(x*(10+va));'
 assert 6 'fuga = 1;hoge = 2+3;return fuga+hoge;'
 assert 3 'return 3;return 5;return 10;'
 
+assert 1 'goto hoge; return 0; hoge: return 1;'
+assert 20 'a = 2*(3+2); goto fuga; return a; fuga: return a * 2;'
+assert 201 'b = 100; a = 101;c=1; goto hoge; return c;hoge: return a+b;'
+
 echo OK
