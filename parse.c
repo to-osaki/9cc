@@ -74,6 +74,14 @@ bool at_eof() {
     return token->kind == TK_EOF;
 }
 
+int ident_length(char *p) {
+    char *q = p;
+    while('a' <= *q && *q <= 'z') {
+        ++q;
+    }
+    return q - p;
+}
+
 Token *new_token(TokenKind kind, Token *cur, char *str, int len) {
     Token *tok = calloc(1, sizeof(Token));
     tok->kind = kind;
@@ -98,8 +106,9 @@ Token *tokenize() {
         }
         // Identifier
         else if('a' <= *p && *p <= 'z') {
-            cur = new_token(TK_IDENT, cur, p, 1);
-            ++p;
+            int len = ident_length(p);
+            cur = new_token(TK_IDENT, cur, p, len);
+            p += len;
             continue;
         }
         // Punctuator

@@ -52,7 +52,7 @@ assert 1 '1>=1;'
 assert 0 '1>=2;'
 
 assert 6 'a = 3;3+a;'
-assert 18 'a = 3;c=-16;-(a*(10+c));'
-assert 6 'f = 1;h = 2+3;f+h;'
+assert 18 'x = 3;va=-16;-(x*(10+va));'
+assert 6 'fuga = 1;hoge = 2+3;fuga+hoge;'
 
 echo OK
