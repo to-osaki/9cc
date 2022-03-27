@@ -74,9 +74,16 @@ bool at_eof() {
     return token->kind == TK_EOF;
 }
 
+int is_alnum(char c) {
+  return ('a' <= c && c <= 'z') ||
+         ('A' <= c && c <= 'Z') ||
+         ('0' <= c && c <= '9') ||
+         (c == '_');
+}
+
 int ident_length(char *p) {
     char *q = p;
-    while('a' <= *q && *q <= 'z') {
+    while(is_alnum(*q)) {
         ++q;
     }
     return q - p;
@@ -97,15 +104,27 @@ Token *tokenize() {
     head.next = NULL;
     Token *cur = &head;
 
-
     while(*p) {
         // blank
         if(isspace(*p)) {
             ++p; // skip
             continue;
         }
+        // Number
+        else if(isdigit(*p)) {
+            cur = new_token(TK_NUM, cur, p, 0);
+            char *q = p;
+            cur->val = strtol(p, &p, 10);
+            cur->len = p - q;
+            continue;
+        }
+        // reserved word : return
+        else if(strncmp(p, "return", 6) == 0 && isspace(p[6])) {
+            cur = new_token(TK_RETURN, cur, p, 6);
+            p += 6;
+        }
         // Identifier
-        else if('a' <= *p && *p <= 'z') {
+        else if(is_alnum(*p)) {
             int len = ident_length(p);
             cur = new_token(TK_IDENT, cur, p, len);
             p += len;
@@ -124,14 +143,6 @@ Token *tokenize() {
         }
         else if(strchr("+-*/()<>=;", *p)) {
             cur = new_token(TK_RESERVED, cur, p++, 1);
-            continue;
-        }
-        // Number
-        else if(isdigit(*p)) {
-            cur = new_token(TK_NUM, cur, p, 0);
-            char *q = p;
-            cur->val = strtol(p, &p, 10);
-            cur->len = p - q;
             continue;
         }
         else {

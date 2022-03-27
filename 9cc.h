@@ -21,6 +21,8 @@ typedef enum {
     ND_NEQ,
     ND_LOWER,
     ND_LEQ,
+
+    ND_RETURN,
 } NodeKind;
 
 // node
@@ -45,6 +47,8 @@ typedef struct _LVar {
 // token kind
 typedef enum {
     TK_RESERVED,
+    TK_RETURN, // reserved word : return
+
     TK_IDENT,
     TK_NUM,
     TK_EOF,

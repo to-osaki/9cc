@@ -18,7 +18,7 @@ assert() {
 }
 
 assert 0 '0;'
-assert 42 '42;'
+assert 42 'return 42;'
 assert 21 '5+20-4;'
 assert 30 '15-0+15;'
 assert 41 ' 12 + 34 - 5 ;'
@@ -52,7 +52,8 @@ assert 1 '1>=1;'
 assert 0 '1>=2;'
 
 assert 6 'a = 3;3+a;'
-assert 18 'x = 3;va=-16;-(x*(10+va));'
-assert 6 'fuga = 1;hoge = 2+3;fuga+hoge;'
+assert 18 'x = 3;va=-16;return -(x*(10+va));'
+assert 6 'fuga = 1;hoge = 2+3;return fuga+hoge;'
+assert 3 'return 3;return 5;return 10;'
 
 echo OK

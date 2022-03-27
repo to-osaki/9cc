@@ -26,9 +26,9 @@ NodePtr new_node_num(int val) {
     node->val = val;
     return node;
 }
-NodePtr new_node_localvar() {
+NodePtr new_leaf_node(NodeKind kind) {
     NodePtr node = calloc(1, sizeof(Node));
-    node->kind = ND_LOCALVAR;
+    node->kind = kind;
     return node;
 }
 
@@ -42,11 +42,19 @@ void program() {
     }
     g_code[i] = NULL;
 }
-// statement = expr ";"
+// statement = "return" expr ";" | expr ";"
 NodePtr statement() {
-    NodePtr node = expr();
-    expect(";");
-    return node;
+    if(consume_kind(TK_RETURN)) {
+        Node *node = new_leaf_node(ND_RETURN);
+        node->lhs = expr();
+        expect(";");
+        return node;
+    }
+    else {
+        NodePtr node = expr();
+        expect(";");
+        return node;
+    }
 }
 // expr = assign
 NodePtr expr() {
@@ -134,7 +142,7 @@ NodePtr primary() {
 
     TokenPtr ident = consume_kind(TK_IDENT);
     if(ident != NULL) {
-        Node *node = new_node_localvar();
+        Node *node = new_leaf_node(ND_LOCALVAR);
         LVar *lvar = find_lvar(ident);
         if(lvar != NULL) {
             node->offset = lvar->offset;
@@ -170,6 +178,13 @@ void gen_lval(NodePtr node) {
 void gen(NodePtr node) {
     // treat lvalue
     switch(node->kind) {
+        case ND_RETURN:
+            gen(node->lhs);
+            printf("  pop rax\n");
+            printf("  mov rsp, rbp\n");
+            printf("  pop rbp\n");
+            printf("  ret\n"); // return
+            return;
         case ND_NUM:
             printf("  push %d\n", node->val);
             return;
