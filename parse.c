@@ -75,10 +75,11 @@ Token *tokenize() {
     head.next = NULL;
     Token *cur = &head;
 
+
     while(*p) {
         // blank
         if(isspace(*p)) {
-            ++p;
+            ++p; // skip
             continue;
         }
         // Punctuator
@@ -92,7 +93,7 @@ Token *tokenize() {
             p += 2;
             continue;
         }
-        else if(strchr("+-*/()<>", *p)) {
+        else if(strchr("+-*/()<>=;", *p)) {
             cur = new_token(TK_RESERVED, cur, p++, 1);
             continue;
         }

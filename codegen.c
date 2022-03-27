@@ -16,6 +16,21 @@ NodePtr new_node_num(int val) {
 }
 
 // methods by production-rule
+// program = statement*
+NodePtr program() {
+    NodePtr node = statement();
+    while(!at_eof()) {
+        node = statement();
+    }
+    return node;
+}
+// statement = expr ";"
+NodePtr statement(){
+    NodePtr node = expr();
+    expect(";");
+    return node;
+}
+
 // expr = mul ("+" mul | "-" mul)*
 NodePtr expr() {
     return equality();
@@ -25,8 +40,8 @@ NodePtr equality()
 {
     NodePtr node = relational();
     for(;;) {
-        if(consume("=="))
-            node = new_node(ND_EQ, node, relational());
+        if(consume("==")) // if token'==' is consumable, 
+            node = new_node(ND_EQ, node, relational()); // then it's equation
         else if(consume("!="))
             node = new_node(ND_NEQ, node, relational());
         else

@@ -46,7 +46,10 @@ typedef struct _Token {
     char *str;
 } Token;
 
+
 // forward declaration
+extern NodePtr program();
+extern NodePtr statement();
 extern NodePtr expr();
 extern NodePtr equality();
 extern NodePtr relational();
@@ -58,6 +61,8 @@ extern NodePtr primary();
 extern bool consume(char*);
 extern void expect(char*);
 extern int expect_number();
+extern bool startswith(char *p, char *q);
+extern bool at_eof();
 
 extern void gen(NodePtr node);
 extern Token *tokenize();
