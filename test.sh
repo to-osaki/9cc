@@ -53,5 +53,6 @@ assert 0 '1>=2;'
 
 assert 6 'a = 3;3+a;'
 assert 18 'a = 3;c=-16;-(a*(10+c));'
+assert 6 'f = 1;h = 2+3;f+h;'
 
 echo OK

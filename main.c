@@ -10,6 +10,9 @@ int main(int argc, char **argv)
     token = tokenize();
     program(); // into g_code;
 
+    int var_count = 0;
+    for(LVar *p = g_locals; p != NULL; p = p->next, ++var_count) {}
+
     printf(".intel_syntax noprefix\n");
     printf(".global main\n");
     printf("main:\n");
@@ -17,7 +20,7 @@ int main(int argc, char **argv)
     // prologue : reserve localvar
     printf("  push rbp\n");
     printf("  mov rbp, rsp\n");
-    printf("  sub rsp, 208\n"); // extend stack 8 * (a to z)
+    printf("  sub rsp, %d\n", var_count * 8); // extend stack
 
     for(int i = 0; g_code[i] != NULL; ++i) {
         gen(g_code[i]);

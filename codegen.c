@@ -1,6 +1,16 @@
 #include "9cc.h"
 
 Node *g_code[100];
+LVar *g_locals = NULL; // local vars
+
+LVar *find_lvar(Token *t) {
+    for(LVar *var = g_locals; var != NULL; var = var->next) {
+        if(var->len == t->len && memcmp(var->name, t->str, t->len) == 0) {
+            return var;
+        }
+    }
+    return NULL;
+}
 
 // node generator methods
 NodePtr new_node(NodeKind kind, NodePtr lhs, NodePtr rhs) {
@@ -16,10 +26,9 @@ NodePtr new_node_num(int val) {
     node->val = val;
     return node;
 }
-NodePtr new_node_localvar(int offset) {
+NodePtr new_node_localvar() {
     NodePtr node = calloc(1, sizeof(Node));
     node->kind = ND_LOCALVAR;
-    node->offset = offset;
     return node;
 }
 
@@ -125,7 +134,22 @@ NodePtr primary() {
 
     TokenPtr ident = consume_kind(TK_IDENT);
     if(ident != NULL) {
-        return new_node_localvar((ident->str[0] - 'a' + 1) * 8);
+        Node *node = new_node_localvar();
+        LVar *lvar = find_lvar(ident);
+        if(lvar != NULL) {
+            node->offset = lvar->offset;
+        }
+        else
+        {
+            lvar = calloc(1, sizeof(LVar));
+            lvar->next = g_locals;
+            lvar->name = ident->str;
+            lvar->len = ident->len;
+            lvar->offset = (g_locals != NULL ? g_locals->offset : 0) + 8;
+            node->offset = lvar->offset;
+            g_locals = lvar;
+        }
+        return node;
     }
     else {
         return new_node_num(expect_number());

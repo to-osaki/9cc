@@ -33,6 +33,15 @@ typedef struct _Node {
     int offset; // use if ND_LOCALVAR, offset from BP
 } Node;
 
+// local var
+typedef struct _LVar *LVarPtr;
+typedef struct _LVar {
+    LVarPtr next;
+    char *name;
+    int len;
+    int offset;
+} LVar;
+
 // token kind
 typedef enum {
     TK_RESERVED,
@@ -77,3 +86,4 @@ extern Token *tokenize();
 extern TokenPtr token; // current token
 extern Node *g_code[100];
 extern char *user_input; // source code
+extern LVar *g_locals; // local vars
